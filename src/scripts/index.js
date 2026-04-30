@@ -9,12 +9,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   const app = new App({
     content: document.querySelector('.app'),
   });
-  await app.renderPage();
 
-  window.addEventListener('hashchange', async () => {
-    const hash = location.hash;
-
+  const handleRouteChange = async () => {
     await app.renderPage();
     Camera.stopAllStreams();
-  });
+  };
+
+  await handleRouteChange();
+
+  window.addEventListener('hashchange', handleRouteChange);
 });

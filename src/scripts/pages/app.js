@@ -1,6 +1,7 @@
 import routes from '../routes/routes';
 import { parseActivePathname, getActiveRoute } from '../routes/url-parser';
 import { transitionHelper } from '../utils';
+import { resolveFinalRoute } from '../utils/auth';
 import { SCROLL_INTENT } from '../config';
 import AuthLayout from './layout/auth-layout';
 import MainLayout from './layout/layout';
@@ -13,15 +14,25 @@ class App {
   }
 
   async renderPage() {
-    const url = getActiveRoute();
-    const route = routes[url];
-    const page = route(this);
+    const finalRoute = resolveFinalRoute();
+
+    const routeHandler = routes[finalRoute];
+    if (!routeHandler) {
+      console.warn(`No route handler for: ${finalRoute}`);
+      return;
+    }
+
+    const page = routeHandler(this);
+
+    if (!page) {
+      console.warn('Page is null even after guard resolution');
+      return;
+    }
 
     const { resource } = parseActivePathname();
     const isAuth = resource === 'login' || resource === 'register';
 
     const layoutInstance = isAuth ? new AuthLayout() : new MainLayout();
-
     const layout = await layoutInstance.render();
 
     const transition = transitionHelper({

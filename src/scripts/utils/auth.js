@@ -39,29 +39,30 @@ export function removeAccessToken() {
 
 const unauthenticatedRoutesOnly = ['/login', '/register'];
 
-export function checkUnauthenticatedRouteOnly(page) {
-  const url = getActiveRoute();
-  const isLogin = !!getAccessToken();
-
-  if (unauthenticatedRoutesOnly.includes(url) && isLogin) {
-    location.hash = '/';
-    return null;
-  }
-
-  return page;
-}
-
-export function checkAuthenticatedRoute(page) {
-  const isLogin = !!getAccessToken();
-
-  if (!isLogin) {
-    location.hash = '/login';
-    return null;
-  }
-
-  return page;
-}
-
 export function getLogout() {
   removeAccessToken();
+}
+
+export function resolveFinalRoute() {
+  let currentRoute = getActiveRoute();
+  const isLoggedIn = !!getAccessToken();
+
+  if (
+    !isLoggedIn &&
+    currentRoute !== '/login' &&
+    currentRoute !== '/register'
+  ) {
+    location.hash = '/login';
+    return '/login';
+  }
+
+  if (
+    isLoggedIn &&
+    (currentRoute === '/login' || currentRoute === '/register')
+  ) {
+    location.hash = '/';
+    return '/';
+  }
+
+  return currentRoute;
 }
