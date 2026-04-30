@@ -6,7 +6,6 @@ import Map from '../../utils/map';
 import MainLayout from '../layout/layout';
 import StoryItem from '../../components/story-item';
 import { parseActivePathname } from '../../routes/url-parser';
-import { createCarousel } from '../../utils';
 import { showFormattedDate } from '../../utils';
 
 export default class DetailStoryPage {

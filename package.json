@@ -18,7 +18,6 @@
   "dependencies": {
     "@maptiler/leaflet-maptilersdk": "^4.1.1",
     "@maptiler/sdk": "^4.0.1",
-    "leaflet": "^1.9.4",
-    "tiny-slider": "^2.9.4"
+    "leaflet": "^1.9.4"
   }
 }

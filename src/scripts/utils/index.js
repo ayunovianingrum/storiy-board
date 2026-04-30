@@ -37,25 +37,6 @@ export function transitionHelper({ skipTransition = false, updateDOM }) {
   return transition;
 }
 
-export async function createCarousel(containerElement, options = {}) {
-  const { tns } = await import('tiny-slider');
-
-  return tns({
-    container: containerElement,
-    mouseDrag: true,
-    swipeAngle: false,
-    speed: 600,
-
-    nav: true,
-    navPosition: 'bottom',
-
-    autoplay: false,
-    controls: false,
-
-    ...options,
-  });
-}
-
 export function convertBlobToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
