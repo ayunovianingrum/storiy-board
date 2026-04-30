@@ -1,0 +1,270 @@
+@import 'tailwindcss';
+
+@theme {
+  --spacing: 4px;
+
+  --color-white: #ffffff;
+  --color-base-light: #fdfeff;
+  --color-base-medium: #f7fbff;
+  --color-base-dark: #eff5fb;
+
+  --color-light-bluish-grey: #e3edf6;
+  --color-bluish-grey: #dbe4ee;
+
+  --color-primary-10: #d4e6f7;
+  --color-primary-30: #a9ccee;
+  --color-primary-40: #93c0ea;
+  --color-primary-50: #70a5e0;
+  --color-primary-60: #5d89bb;
+  --color-primary-70: #4b6e95;
+  --color-primary-80: #385370;
+
+  --color-grey-10: #eff0f1;
+  --color-grey-20: #e6e8e9;
+  --color-grey-30: #dee0e2;
+  --color-grey-40: #d6d9db;
+  --color-grey-50: #ced1d4; /* Disabled */
+  --color-grey-60: #a5a7aa;
+  --color-grey-70: #7c7e80;
+  --color-grey-80: #525455;
+  --color-grey-90: #313233;
+
+  --default-font-family: 'Google Sans Flex', sans-serif;
+  --shadow-soft: 0 6px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--default-font-family);
+  background-color: var(--color-base-medium);
+}
+
+.map-fog-top,
+.map-fog {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  pointer-events: none;
+}
+
+.map-fog-top {
+  top: 0;
+  background: linear-gradient(
+    to top,
+    transparent 0%,
+    var(--color-base-medium) 100%
+  );
+}
+
+.map-fog {
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--color-base-medium) 100%
+  );
+}
+
+.skeleton {
+  animation: shimmer 1s ease infinite;
+  background: linear-gradient(90deg, #e4ebf1 25%, #062e6d 37%, #e6edf5 63%);
+  background-size: 400% 100%;
+  inset: 0;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loader {
+  text-align: center;
+}
+
+.loader::after {
+  content: '';
+  display: inline-block;
+  box-sizing: border-box;
+  width: 50px;
+  height: 50px;
+  border: 6px solid #d4d4d4aa;
+  border-bottom-color: var(--color-primary-60);
+  border-radius: 100%;
+
+  animation: rotation 1s linear infinite;
+}
+
+.loader.loader-absolute::after {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+i.loader-button {
+  animation: rotation 1s linear infinite;
+}
+
+.auth-panel {
+  view-transition-name: auth-panel;
+}
+
+#login-form-wrapper {
+  view-transition-name: form-login;
+}
+
+#register-form-wrapper {
+  view-transition-name: form-register;
+}
+
+::view-transition-old(auth-panel) {
+  animation: 0.5s cubic-bezier(0.77, 0, 0.175, 1) both slide-out;
+}
+
+::view-transition-new(auth-panel) {
+  animation: 0.5s cubic-bezier(0.77, 0, 0.175, 1) both slide-in;
+}
+
+::view-transition-old(form-login),
+::view-transition-old(form-register) {
+  animation: 0.3s ease both fade-out;
+}
+
+::view-transition-new(form-login),
+::view-transition-new(form-register) {
+  animation: 0.3s 0.15s ease both fade-in;
+}
+
+@keyframes slide-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@layer {
+  .cs-input {
+    @apply mt-2 block w-full rounded-full bg-white px-5 py-3 text-sm;
+  }
+
+  .cs-textarea {
+    @apply mt-2 block min-h-20 w-full resize-y rounded-2xl bg-white px-5 py-3 text-sm;
+  }
+
+  input::placeholder {
+    @apply text-sm;
+  }
+
+  select {
+    @apply text-grey-80 text-sm;
+  }
+
+  .cs-input:disabled {
+    @apply bg-grey-20 text-grey-70;
+  }
+
+  .cs-label {
+    @apply text-primary-70 block text-sm;
+  }
+
+  .cs-more-info {
+    @apply text-grey-60 block text-xs;
+  }
+
+  .cs-btn {
+    @apply cursor-pointer rounded-full px-5 py-2 text-sm font-medium md:py-3 md:text-lg;
+  }
+
+  .cs-btn-primary {
+    @apply bg-primary-50 border-primary-50 border-2 text-white backdrop-blur-xl;
+  }
+
+  .cs-btn-primary:not(.cs-btn-loading):hover {
+    @apply bg-primary-60 border-primary-60;
+  }
+
+  .cs-btn-secondary {
+    @apply border-primary-50 text-primary-50 border-2;
+  }
+
+  .cs-btn-secondary:not(.cs-btn-loading):hover {
+    @apply border-primary-60 text-primary-60 bg-primary-50/10;
+  }
+
+  .cs-btn-loading {
+    @apply cursor-wait! opacity-70;
+  }
+
+  .cs-err-message {
+    @apply mt-1 mb-2 min-h-1 text-xs text-red-600;
+  }
+
+  .cs-tag-text-outlined {
+    @apply border-primary-50 rounded-full border-2 px-2;
+  }
+
+  .cs-tag-text {
+    @apply border-primary-50 bg-primary-50 rounded-full border-2 px-2 text-white;
+  }
+
+  .cs-cam-canvas-container.open {
+    @apply block!;
+  }
+
+  .leaflet-bottom,
+  .leaflet-control,
+  .leaflet-control-layers {
+    @apply z-1001!;
+  }
+
+  .leaflet-touch .leaflet-control-layers,
+  .leaflet-touch .leaflet-bar {
+    @apply border-grey-50! border;
+  }
+
+  .map-wrapper {
+    @apply relative h-150 w-full;
+  }
+
+  #map {
+    @apply h-full w-full;
+  }
+
+  .skeleton-line {
+    @apply bg-bluish-grey mb-5 h-10 rounded-lg;
+  }
+
+  .skeleton-line.short {
+    @apply w-[10%];
+  }
+
+  .skeleton-title {
+    @apply bg-bluish-grey mb-11 h-10 w-[60%] rounded-lg;
+  }
+}
