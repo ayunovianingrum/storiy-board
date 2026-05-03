@@ -254,7 +254,7 @@ var eS=Object.defineProperty;var E0=c=>{throw TypeError(c)};var tS=(c,o,u)=>o in
         <ul>
           <li>
             <a
-              href="/#/"
+              href="#/"
               class="bg-grey-50/15 hover:text-primary-50 mb-2 block w-full cursor-pointer rounded-lg px-4 py-2 transition hover:bg-white/20"
               data-nav="home"
             >
@@ -266,7 +266,7 @@ var eS=Object.defineProperty;var E0=c=>{throw TypeError(c)};var tS=(c,o,u)=>o in
             <a
               class="bg-grey-50/15 hover:text-primary-50 block w-full cursor-pointer rounded-lg px-4 py-2 transition hover:bg-white/20"
               data-nav="saved-stories"
-              href="/#/saved-stories"
+              href="#/saved-stories"
             >
               <i class="fas fa-bookmark mr-2"></i>
               Saved Stories</a
@@ -294,9 +294,9 @@ var eS=Object.defineProperty;var E0=c=>{throw TypeError(c)};var tS=(c,o,u)=>o in
         <nav class="bg-light-bluish-grey/80 border-grey-10 fixed top-6 left-1/2 z-9999 w-max min-w-[90%] -translate-x-1/2 rounded-full border py-3 pr-6 pl-8 backdrop-blur-xl lg:min-w-[70%]">
           <ul class="flex w-full items-center justify-between gap-2">
             <li>
-              <a href="/#/" class="flex items-center gap-2">
+              <a href="#/" class="flex items-center gap-2">
                 <img
-                  src="/images/icons/logo-dark.png"
+                  src="images/icons/logo-dark.png"
                   class="h-5 w-5"
                   alt="Storiy Logo"
                 />
@@ -305,10 +305,10 @@ var eS=Object.defineProperty;var E0=c=>{throw TypeError(c)};var tS=(c,o,u)=>o in
             </li>
             <ul class="flex gap-6">
               <li class="hidden md:block">
-                <a href="/#/" data-nav="home">All Stories</a>
+                <a href="#/" data-nav="home">All Stories</a>
               </li>
               <li class="hidden md:block">
-                <a href="/#/saved-stories" data-nav="saved-stories">
+                <a href="#/saved-stories" data-nav="saved-stories">
                   Saved Stories
                 </a>
               </li>
@@ -1373,7 +1373,7 @@ void main() {
           >
             <header class="flex gap-2 md:order-1 md:flex-col">
               <img
-                src="/images/icons/logo.png"
+                src="images/icons/logo.png"
                 class="w-7 md:w-12"
                 alt="Storiy Logo"
               />
