@@ -6,15 +6,15 @@ A modern single-page web application for sharing stories enriched with location 
 
 ## ✨ Features
 
-- 📖 View all shared stories in a responsive grid
-- 📍 Interactive map integration for story locations
-- ➕ Add new stories with:
-  - Description
-  - Photo upload or camera capture
-  - Location selection via map
-- 🔐 Authentication (Login & Register)
-- ♿ Accessibility support (keyboard navigation & skip-to-content)
-- 📱 Fully responsive design
+- Dynamic Story Feed: View shared stories in a responsive, accessible grid.
+- Interactive Map: Leaflet integration to explore stories by geographic location.
+- Advanced PWA Capabilities:
+- Installable: Add to Home Screen support with shortcuts and screenshots.
+- Offline Access: Full offline support for the App Shell and cached dynamic content.
+- Push Notifications: Real-time updates via Service Worker with action buttons for navigation.
+- Notification Toggle: User-controlled subscription management.
+- Offline Story Creation: Add new stories while offline; data is saved to IndexedDB and automatically synchronized via Background Sync when connection is restored.
+- Accessibility (a11y): Keyboard navigation, skip-to-content, and focus management.
 
 ---
 
