@@ -8,6 +8,8 @@
   --color-base-medium: #f7fbff;
   --color-base-dark: #eff5fb;
 
+  --color-light-yellow: #f6edd9;
+
   --color-light-bluish-grey: #e3edf6;
   --color-bluish-grey: #dbe4ee;
 
@@ -52,7 +54,7 @@ body {
 }
 
 .map-fog-top {
-  top: 0;
+  top: -2px;
   background: linear-gradient(
     to top,
     transparent 0%,
@@ -265,6 +267,6 @@ i.loader-button {
   }
 
   .skeleton-title {
-    @apply bg-bluish-grey mb-11 h-10 w-[60%] rounded-lg;
+    @apply bg-bluish-grey h-10 w-[60%] rounded-lg;
   }
 }

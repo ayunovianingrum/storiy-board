@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from '../config';
+
 export function showFormattedDate(date, locale = 'en-US', options = {}) {
   return new Date(date).toLocaleDateString(locale, {
     year: 'numeric',
@@ -15,7 +17,9 @@ export function capitalize(str = '') {
   return str
     .trim()
     .toLowerCase()
-    .replace(/^./, (char) => char.toUpperCase());
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 export function transitionHelper({ skipTransition = false, updateDOM }) {
@@ -79,4 +83,51 @@ export function convertBase64ToUint8Array(base64String) {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return outputArray;
+}
+
+export function isServiceWorkerAvailable() {
+  return 'serviceWorker' in navigator;
+}
+
+export async function registerServiceWorker() {
+  if (!isServiceWorkerAvailable()) {
+    console.log('Service Worker API unsupported');
+    return;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    return registration;
+  } catch (err) {
+    console.error('SW failed:', err);
+  }
+}
+
+export async function registerBackgroundSync() {
+  const registration = await navigator.serviceWorker.ready;
+  await registration.sync.register('sync-stories');
+}
+
+export async function isReallyOnline() {
+  try {
+    await fetch('/ping.json', { cache: 'no-store' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getUserName() {
+  const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
+  const name = userData?.USER_NAME || 'Your Name';
+
+  return name;
+}
+
+export function scrollToStoryList() {
+  const el = document.querySelector('#story-container');
+  if (el) {
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: top - 80, behavior: 'smooth' });
+  }
 }

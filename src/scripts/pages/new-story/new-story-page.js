@@ -7,8 +7,11 @@ import { html } from '../../utils/html';
 import MainLayout from '../layout/layout';
 import {
   validateNewStory,
+  validatePhotoSize,
   attachNewStoryLiveValidation,
 } from '../../validation/custom-new-story-validation';
+import Database from '../../database';
+import { photoUploaded } from '../../template';
 
 export default class NewStoryPage {
   #presenter;
@@ -19,13 +22,26 @@ export default class NewStoryPage {
   #cameraActionBound = false;
   #map = null;
 
+  constructor() {
+    this.updatePositionHandler = null;
+    this.flyToHandler = null;
+    this.draggableMarker = null;
+
+    this.onChangeUploadPhoto = this.#onChangeUploadPhoto.bind(this);
+    this.onClickUploadButton = this.#onClickUploadButton.bind(this);
+    this.onClickCameraButton = this.#onClickCameraButton.bind(this);
+    this.onClickRemovePhoto = this.#onClickRemovePhoto.bind(this);
+    this.redirectToHome = this.#redirectToHome.bind(this);
+    this.removePhoto = this.#removePhoto.bind(this);
+  }
+
   async render() {
     return html`
       <section
         class="m-auto flex min-h-screen max-w-[85%] items-center pt-30 pb-4 md:w-full md:pt-35"
       >
         <div
-          class="relative m-auto flex h-full w-full flex-col justify-between overflow-hidden rounded-4xl p-4 md:flex-row lg:max-w-[90%]"
+          class="bg-primary-80 relative m-auto flex h-full w-full flex-col justify-between overflow-hidden rounded-4xl p-4 md:flex-row lg:max-w-[90%]"
         >
           <div
             class="absolute inset-0 z-10 scale-105 bg-[url('/images/login-bg.jpg')] bg-cover bg-center blur-md"
@@ -134,7 +150,7 @@ export default class NewStoryPage {
                 </div>
               </div>
               <div>
-                <div class="new-form__location__container">
+                <div>
                   <p class="cs-label mt-4 mb-2">Location</p>
                   <div class="relative h-62.5 rounded-2xl">
                     <div id="map" class="h-full rounded-2xl"></div>
@@ -202,69 +218,76 @@ export default class NewStoryPage {
     this.#presenter = new NewStoryPresenter({
       view: this,
       model: StoryAPI,
+      dbModel: Database,
     });
 
     this.#presenter.init();
     this.#setupForm();
+    this.#setupRemovePhotoEvents();
+    this.#initLiveValidation();
   }
 
-  #setupForm() {
-    this.#form = document.getElementById('new-story-form');
-
-    const MAX_SIZE = 1 * 1024 * 1024; // 1MB
+  destroy() {
+    this.#destroyMap();
 
     document
       .getElementById('doc-input')
-      .addEventListener('change', async (event) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        const MAX_SIZE = 1 * 1024 * 1024;
-        const errorEl = document.getElementById('err-message-photo');
-
-        if (file.size > MAX_SIZE) {
-          errorEl.innerText =
-            'The photo is too large. Please upload one under 1MB.';
-          event.target.value = '';
-          return;
-        }
-
-        errorEl.innerText = '';
-
-        await this.#insertPhotoData(file);
-
-        event.target.value = '';
-      });
+      .removeEventListener('change', this.onChangeUploadPhoto);
 
     document
       .getElementById('doc-input-button')
-      .addEventListener('click', () => {
-        this.#form.elements.namedItem('doc-input').click();
-      });
+      .removeEventListener('click', this.onClickUploadButton);
 
-    document.getElementById('back-btn').addEventListener('click', () => {
-      this.redirectToHome();
-    });
+    document
+      .getElementById('back-btn')
+      .removeEventListener('click', this.redirectToHome);
 
-    document.getElementById('cancel-btn').addEventListener('click', () => {
-      this.redirectToHome();
-    });
+    document
+      .getElementById('cancel-btn')
+      .removeEventListener('click', this.redirectToHome);
 
     document
       .getElementById('open-doc-camera-button')
-      .addEventListener('click', async (event) => {
-        if (this.#isCameraOpen) {
-          this.#closeCamera(event);
-        } else {
-          await this.#setupCamera(event);
-        }
-      });
+      .removeEventListener('click', this.onClickCameraButton);
+
+    document.removeEventListener('click', this.onClickRemovePhoto);
+
+    this.#form.removeEventListener('submit', this.onClickSubmit);
   }
 
-  initLiveValidation() {
-    const form = document.getElementById('new-story-form');
+  #setupForm() {
+    document
+      .getElementById('doc-input')
+      .addEventListener('change', this.onChangeUploadPhoto);
 
-    attachNewStoryLiveValidation(form);
+    document
+      .getElementById('doc-input-button')
+      .addEventListener('click', this.onClickUploadButton);
+
+    document
+      .getElementById('back-btn')
+      .addEventListener('click', this.redirectToHome);
+
+    document
+      .getElementById('cancel-btn')
+      .addEventListener('click', this.redirectToHome);
+
+    document
+      .getElementById('open-doc-camera-button')
+      .addEventListener('click', this.onClickCameraButton);
+  }
+
+  #setupRemovePhotoEvents() {
+    document.addEventListener('click', this.onClickRemovePhoto);
+  }
+
+  #onClickRemovePhoto(e) {
+    if (!e.target.closest('#remove-photo')) return;
+    this.removePhoto();
+  }
+
+  #initLiveValidation() {
+    attachNewStoryLiveValidation(this.#form);
   }
 
   async initialMap() {
@@ -274,29 +297,66 @@ export default class NewStoryPage {
     });
 
     const centerCoordinate = this.#map.getCenter();
+
     this.#updateLatLngInput(
       centerCoordinate.latitude,
       centerCoordinate.longitude,
     );
 
-    const draggableMarker = this.#map.addMarker(
-      [centerCoordinate.latitude, centerCoordinate.longitude],
-      { draggable: 'true' },
-    );
-    draggableMarker.addEventListener('move', (event) => {
+    this.updatePositionHandler = (event) => {
       const coordinate = event.target.getLatLng();
       this.#updateLatLngInput(coordinate.lat, coordinate.lng);
-    });
+    };
 
-    this.#map.addMapEventListener('click', (event) => {
-      draggableMarker.setLatLng(event.latlng);
+    this.flyToHandler = (event) => {
+      this.draggableMarker.setLatLng(event.latlng);
       event.sourceTarget.flyTo(event.latlng);
-    });
+    };
+
+    this.draggableMarker = this.#map.addMarker(
+      [centerCoordinate.latitude, centerCoordinate.longitude],
+      { draggable: true },
+    );
+
+    this.draggableMarker.addEventListener('move', this.updatePositionHandler);
+
+    this.#map.addMapEventListener('click', this.flyToHandler);
   }
 
   #updateLatLngInput(latitude, longitude) {
     this.#form.elements.namedItem('latitude').value = latitude;
     this.#form.elements.namedItem('longitude').value = longitude;
+  }
+
+  #onClickUploadButton() {
+    this.#form.elements.namedItem('doc-input').click();
+  }
+
+  async #onClickCameraButton(event) {
+    if (this.#isCameraOpen) {
+      this.#closeCamera(event);
+    } else {
+      await this.#setupCamera(event);
+    }
+  }
+
+  async #onChangeUploadPhoto(e) {
+    const file = event.target.files?.[0];
+    const errorEl = document.getElementById('err-message-photo');
+
+    const { valid, error } = validatePhotoSize(file);
+
+    if (!valid) {
+      errorEl.innerText = error;
+      event.target.value = '';
+      return;
+    }
+
+    errorEl.innerText = '';
+
+    await this.#insertPhotoData(file);
+
+    event.target.value = '';
   }
 
   async #setupCamera(event) {
@@ -373,7 +433,7 @@ export default class NewStoryPage {
       blob,
     };
 
-    this.validatePhoto();
+    this.#validatePhoto();
     this.#renderPhoto();
     this.#updatePhotoButtons();
   }
@@ -387,34 +447,12 @@ export default class NewStoryPage {
     }
 
     const url = URL.createObjectURL(this.#photoData.blob);
-
-    document.getElementById('doc-list').innerHTML = html`<li
-      class="relative flex h-30 w-30 flex-col items-center justify-center rounded-2xl bg-white p-2 md:h-45 md:w-45"
-    >
-      <img
-        src="${url}"
-        alt="Photo uploaded"
-        class="max-h-full max-w-full rounded-lg"
-      />
-      <button
-        type="button"
-        id="remove-photo"
-        class="bg-grey-90/10 absolute right-3 bottom-3 h-10 w-10 cursor-pointer rounded-lg p-2 backdrop-blur-xl"
-      >
-        <i class="fas fa-trash text-primary-50"></i>
-      </button>
-    </li>`;
-
-    document
-      .getElementById('remove-photo')
-      .addEventListener('click', (event) => {
-        this.#removePhoto();
-      });
+    container.innerHTML = photoUploaded(url);
   }
 
   #removePhoto() {
     this.#photoData = null;
-    this.validatePhoto();
+    this.#validatePhoto();
     this.#renderPhoto();
     this.#updatePhotoButtons();
   }
@@ -439,7 +477,7 @@ export default class NewStoryPage {
     );
   }
 
-  validatePhoto() {
+  #validatePhoto() {
     const el = document.getElementById('err-message-photo');
 
     if (!this.#photoData) {
@@ -451,12 +489,12 @@ export default class NewStoryPage {
     return true;
   }
 
-  redirectToHome() {
-    this.clearForm();
-    location.hash = '/';
+  #redirectToHome() {
+    this.#clearForm();
+    history.back();
   }
 
-  clearForm() {
+  #clearForm() {
     this.#form.reset();
   }
 
@@ -483,22 +521,23 @@ export default class NewStoryPage {
   }
 
   bindSubmit(handler) {
-    const form = document.getElementById('new-story-form');
-
-    form.addEventListener('submit', async (event) => {
+    this.#form = document.getElementById('new-story-form');
+    this.onClickSubmit = async (event) => {
       event.preventDefault();
 
-      const payload = this.getFormData();
+      const payload = this.#getFormData();
 
       await handler(payload);
-    });
+    };
+
+    this.#form.addEventListener('submit', this.onClickSubmit);
   }
 
-  getFormData() {
+  #getFormData() {
     return {
       description: document.getElementById('desc-input').value,
-      latitude: document.querySelector('input[name="latitude"]').value,
-      longitude: document.querySelector('input[name="longitude"]').value,
+      lat: document.querySelector('input[name="latitude"]').value,
+      lon: document.querySelector('input[name="longitude"]').value,
       photo: this.#photoData?.blob,
     };
   }
@@ -512,5 +551,25 @@ export default class NewStoryPage {
       const el = document.getElementById(`err-message-${field}`);
       if (el) el.innerText = message;
     });
+  }
+
+  #destroyMap() {
+    if (!this.#map) return;
+
+    if (this.draggableMarker && this.updatePositionHandler) {
+      this.draggableMarker.removeEventListener(
+        'move',
+        this.updatePositionHandler,
+      );
+    }
+
+    if (this.flyToHandler) {
+      this.#map.removeMapEventListener('click', this.flyToHandler);
+    }
+
+    this.#map = null;
+    this.draggableMarker = null;
+    this.updatePositionHandler = null;
+    this.flyToHandler = null;
   }
 }

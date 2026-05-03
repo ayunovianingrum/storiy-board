@@ -22,7 +22,7 @@ class SnackBar extends HTMLElement {
   }
 
   render() {
-    this.innerHTML = `<div id="snackbar" class="fixed left-1/2 -translate-x-1/2 transition opacity-0 text-white"></div>`;
+    this.innerHTML = `<div id="snackbar" class="fixed left-1/2 -translate-x-1/2 transition hidden text-white z-9999"></div>`;
 
     this.el = this.querySelector('#snackbar');
   }
@@ -38,15 +38,15 @@ class SnackBar extends HTMLElement {
     const variants = {
       success: 'bg-green-600 text-white',
       error: 'bg-red-600 text-white',
+      warning: 'bg-amber-500 text-white',
     };
 
     this.el.className = `${baseStyle} ${position[this.position]} ${variants[type] || variants.success}`;
     this.el.textContent = message;
-    this.el.classList.add('opacity-100');
+    this.el.classList.remove('hidden');
 
     sleep(4000).then(() => {
-      this.el.classList.remove('opacity-100');
-      this.el.classList.add('opacity-0');
+      this.el.classList.add('hidden');
     });
   }
 }

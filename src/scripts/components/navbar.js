@@ -1,22 +1,23 @@
-import { html } from '../utils/html';
-import { STORAGE_KEYS } from '../config';
-import { capitalize } from '../utils';
+import { navbarDropdown } from '../template';
+import { capitalize, getUserName } from '../utils';
 import { getLogout } from '../utils/auth';
 
 class NavBar extends HTMLElement {
   constructor() {
     super();
-    this.handleLogout = this.handleLogout.bind(this);
-    this.closeMobileMenu = this.closeMobileMenu.bind(this);
-    this.toggleMobileMenu = this.toggleMobileMenu.bind(this);
+    this.dropdown = null;
+    this.overlay = null;
+    this.logoutBtn = null;
+
+    this.handleLogout = this.#handleLogout.bind(this);
+    this.closeMenu = this.#closeMenu.bind(this);
+    this.toggleMenu = this.#toggleMenu.bind(this);
+    this.escHandler = this.#escHandler.bind(this);
+    this.onClickLogout = this.#onClickLogout.bind(this);
   }
 
   connectedCallback() {
     this.init();
-
-    window.addEventListener('hashchange', () => {
-      this.activeMenu();
-    });
   }
 
   attributeChangedCallback() {
@@ -24,59 +25,69 @@ class NavBar extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this.teardown();
+    const btn = this.querySelector('#menu-btn');
+
+    if (btn) {
+      btn.removeEventListener('click', this.toggleMenu);
+    }
+
+    this.removeEventListener('menu:logout', this.handleLogout);
+    window.removeEventListener('hashchange', this.#activeMenu);
+    document.removeEventListener('keydown', this.escHandler);
   }
 
   init() {
-    this.teardown();
     this.render();
-    this.populateUser();
-    this.activeMenu();
-    this.bindMobileNav();
+    this.#populateUser();
+    this.#activeMenu();
+    this.#bindNav();
 
+    this.addEventListener('hashchange', this.#activeMenu);
     this.addEventListener('menu:logout', this.handleLogout);
   }
 
-  teardown() {
-    this.removeEventListener('menu:logout', this.handleLogout);
-  }
-
   render() {
-    this.innerHTML = html`
+    this.innerHTML = `
       <header id="nav-wrapper">
-        <nav
-          class="bg-light-bluish-grey/70 border-grey-10 fixed top-6 left-[50%] z-9999 w-max min-w-[90%] -translate-x-1/2 rounded-full border py-3 pr-4 pl-8 backdrop-blur-xl lg:min-w-[70%]"
-        >
+        <nav class="bg-light-bluish-grey/80 border-grey-10 fixed top-6 left-1/2 z-9999 w-max min-w-[90%] -translate-x-1/2 rounded-full border py-3 pr-6 pl-8 backdrop-blur-xl lg:min-w-[70%]">
           <ul class="flex w-full items-center justify-between gap-2">
             <li>
               <a href="/#/" class="flex items-center gap-2">
-                <img src="/logo-dark.png" class="h-5 w-5" alt="Storiy Logo" />
+                <img
+                  src="/images/icons/logo-dark.png"
+                  class="h-5 w-5"
+                  alt="Storiy Logo"
+                />
                 <span class="font-semibold">Storiy Board</span>
               </a>
             </li>
-            <li class="hidden md:block">
-              <a href="/#/" data-nav="home">All Stories</a>
-            </li>
-            <li id="user-profile" class="hidden md:block"></li>
-            <li class="md:hidden">
+            <ul class="flex gap-6">
+              <li class="hidden md:block">
+                <a href="/#/" data-nav="home">All Stories</a>
+              </li>
+              <li class="hidden md:block">
+                <a href="/#/saved-stories" data-nav="saved-stories">
+                  Saved Stories
+                </a>
+              </li>
+            </ul>
+            <li class="flex justify-end md:min-w-32">
               <button
-                id="mobile-nav-btn"
+                id="menu-btn"
                 aria-label="Open menu"
                 aria-expanded="false"
-                class="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/30"
+                class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition hover:bg-white/30"
               >
-                <i class="fas fa-bars transition" aria-hidden="true"></i>
+                <i class="fas fa-ellipsis-h transition" aria-hidden="true"></i>
               </button>
             </li>
           </ul>
         </nav>
-
-        <menu-item id="user-menu"></menu-item>
       </header>
     `;
   }
 
-  activeMenu() {
+  #activeMenu() {
     const hash = location.hash || '#/';
     const currentRoute = hash.replace('#/', '') || 'home';
 
@@ -90,156 +101,101 @@ class NavBar extends HTMLElement {
     });
   }
 
-  populateUser() {
-    const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
-    const name = userData?.USER_NAME || 'Your Name';
-
-    this.buildDesktopProfile(name);
-    this.buildMobileDropdown(name);
+  #populateUser() {
+    const name = getUserName();
+    this.#buildDropdown(name);
   }
 
-  buildDesktopProfile(name) {
-    const profile = this.querySelector('#user-profile');
-    const menu = this.querySelector('#user-menu');
-    if (!profile || !menu) return;
-
-    profile.innerHTML = `
-      <button
-        id="desktop-profile-btn"
-        class="flex cursor-pointer items-center gap-2 ml-4 rounded-full px-4 py-2 bg-white/50 transition hover:bg-white/70"
-        aria-haspopup="menu"
-        aria-expanded="false"
-        aria-controls="desktop-user-menu"
-      >
-        <i class="fas fa-user fa-sm" aria-hidden="true"></i>
-        <span>${capitalize(name)}</span>
-        <i id="chevron" class="fas fa-chevron-down ml-3 transition-transform duration-200" aria-hidden="true"></i>
-      </button>
-    `;
-
-    const btn = profile.querySelector('#desktop-profile-btn');
-
-    btn.addEventListener('click', (e) => {
-      const isExpanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!isExpanded));
-      btn.querySelector('#chevron').classList.toggle('rotate-180', !isExpanded);
-
-      menu.open(e.currentTarget, {
-        payload: { userId: 123 },
-        items: [
-          {
-            label: 'Logout',
-            action: 'logout',
-            danger: true,
-            icon: 'fas fa-sign-out-alt',
-          },
-        ],
-      });
-    });
-
-    // Sync aria-expanded + chevron when menu closes from outside (Escape, click outside)
-    menu.addEventListener('menu:close', () => {
-      btn.setAttribute('aria-expanded', 'false');
-      btn.querySelector('#chevron')?.classList.remove('rotate-180');
-    });
-  }
-
-  buildMobileDropdown(name) {
-    document.getElementById('mobile-dropdown')?.remove();
-    document.getElementById('mobile-overlay')?.remove();
+  #buildDropdown(name) {
+    this.#destroyDropdown();
 
     const navWrapper = this.querySelector('#nav-wrapper');
     if (!navWrapper) return;
 
     const dropdown = document.createElement('div');
-    dropdown.id = 'mobile-dropdown';
-    dropdown.setAttribute('aria-hidden', 'true');
-    dropdown.className = [
-      'hidden',
-      'md:!hidden',
-      'bg-light-bluish-grey/70',
-      'border-grey-10',
-      'fixed top-23 left-[50%]',
-      'z-[9999]',
-      'w-max min-w-[90%] -translate-x-1/2',
-      'rounded-2xl border p-4',
-      'backdrop-blur-xl',
-      'transition-all duration-200',
-    ].join(' ');
-
-    dropdown.innerHTML = `
-      <div class="mb-3 flex items-center gap-3 rounded-full px-4 py-2 select-none">
-        <i class="fas fa-user" aria-hidden="true"></i>
-        <p class="font-medium">${capitalize(name)}</p>
-      </div>
-      <button
-        id="mobile-logout-btn"
-        class="flex w-full cursor-pointer items-center gap-2 rounded-full bg-white/30 px-4 py-2 text-red-500 transition hover:bg-red-50/40"
-      >
-        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        <p>Log out</p>
-      </button>
-    `;
+    dropdown.innerHTML = navbarDropdown(name);
 
     const overlay = document.createElement('div');
-    overlay.id = 'mobile-overlay';
+    overlay.id = 'dropdown-overlay';
     overlay.className = 'fixed inset-0 z-[9998] hidden';
-    overlay.setAttribute('aria-hidden', 'true');
 
     navWrapper.appendChild(dropdown);
     navWrapper.appendChild(overlay);
 
-    dropdown
-      .querySelector('#mobile-logout-btn')
-      .addEventListener('click', () => {
-        this.closeMobileMenu();
-        this.handleLogout();
-      });
+    const logoutBtn = dropdown.querySelector('#logout-btn');
 
-    overlay.addEventListener('click', this.closeMobileMenu);
+    logoutBtn?.addEventListener('click', this.onClickLogout);
+    overlay.addEventListener('click', this.closeMenu);
+
+    this.dropdown = dropdown;
+    this.overlay = overlay;
+    this.logoutBtn = logoutBtn;
   }
 
-  bindMobileNav() {
-    const btn = this.querySelector('#mobile-nav-btn');
+  #destroyDropdown() {
+    this.logoutBtn?.removeEventListener('click', this.onClickLogout);
+    this.overlay?.removeEventListener('click', this.closeMenu);
+
+    this.dropdown?.remove();
+    this.overlay?.remove();
+
+    this.dropdown = null;
+    this.overlay = null;
+    this.logoutBtn = null;
+  }
+
+  #onClickLogout() {
+    this.closeMenu();
+    this.handleLogout();
+  }
+
+  #bindNav() {
+    const btn = this.querySelector('#menu-btn');
     if (!btn) return;
 
-    btn.addEventListener('click', this.toggleMobileMenu);
-
-    this.escHandler = (e) => {
-      if (e.key === 'Escape') this.closeMobileMenu();
-    };
+    btn.addEventListener('click', this.toggleMenu);
     document.addEventListener('keydown', this.escHandler);
   }
 
-  toggleMobileMenu() {
-    const dropdown = document.getElementById('mobile-dropdown');
-    const overlay = document.getElementById('mobile-overlay');
-    const btn = this.querySelector('#mobile-nav-btn');
+  #escHandler = (e) => {
+    if (e.key === 'Escape') this.closeMenu();
+  };
+
+  #toggleMenu() {
+    const dropdown = document.getElementById('dropdown');
+    const overlay = document.getElementById('dropdown-overlay');
     if (!dropdown || !overlay) return;
 
     const isOpen = !dropdown.classList.contains('hidden');
 
     if (isOpen) {
-      this.closeMobileMenu();
+      this.closeMenu();
     } else {
-      dropdown.classList.remove('hidden');
-      overlay.classList.remove('hidden');
-      dropdown.setAttribute('aria-hidden', 'false');
-      btn?.setAttribute('aria-expanded', 'true');
-      btn?.querySelector('i')?.classList.replace('fa-bars', 'fa-times');
+      this.#openMenu();
     }
   }
 
-  closeMobileMenu() {
-    const dropdown = document.getElementById('mobile-dropdown');
-    const overlay = document.getElementById('mobile-overlay');
-    const btn = this.querySelector('#mobile-nav-btn');
+  #openMenu() {
+    const dropdown = document.getElementById('dropdown');
+    const overlay = document.getElementById('dropdown-overlay');
+    const btn = this.querySelector('#menu-btn');
+
+    dropdown?.classList.remove('hidden');
+    overlay?.classList.remove('hidden');
+    btn?.setAttribute('aria-expanded', 'true');
+    btn?.querySelector('#chevron')?.classList.add('rotate-180');
+  }
+
+  #closeMenu() {
+    const dropdown = document.getElementById('dropdown');
+    const overlay = document.getElementById('dropdown-overlay');
+    const btn = this.querySelector('#menu-btn');
 
     dropdown?.classList.add('hidden');
     overlay?.classList.add('hidden');
     dropdown?.setAttribute('aria-hidden', 'true');
     btn?.setAttribute('aria-expanded', 'false');
-    btn?.querySelector('i')?.classList.replace('fa-times', 'fa-bars');
+    btn?.querySelector('#chevron')?.classList.remove('rotate-180');
 
     if (this.escHandler) {
       document.removeEventListener('keydown', this.escHandler);
@@ -247,7 +203,7 @@ class NavBar extends HTMLElement {
     }
   }
 
-  handleLogout() {
+  #handleLogout() {
     if (confirm('Apakah Anda yakin ingin keluar?')) {
       getLogout();
       location.hash = '/login';

@@ -13,11 +13,14 @@
     "@tailwindcss/vite": "^4.2.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.2.4",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vite-plugin-pwa": "^1.2.0"
   },
   "dependencies": {
     "@maptiler/leaflet-maptilersdk": "^4.1.1",
     "@maptiler/sdk": "^4.0.1",
+    "idb": "^8.0.3",
+    "idb-keyval": "^6.2.2",
     "leaflet": "^1.9.4"
   }
 }

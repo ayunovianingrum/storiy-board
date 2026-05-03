@@ -38,7 +38,7 @@ export function attachNewStoryLiveValidation(form) {
   form.addEventListener('blur', handler, true);
 }
 
-export function validateNewStory({ description, photo, latitude, longitude }) {
+export function validateNewStory({ description, photo, lat, lon }) {
   const errors = [];
 
   const descError = validateDescription(description);
@@ -51,10 +51,27 @@ export function validateNewStory({ description, photo, latitude, longitude }) {
     errors.push({ field: 'photo', message: photoError });
   }
 
-  const locationError = validateLocation(latitude, longitude);
+  const locationError = validateLocation(lat, lon);
   if (locationError) {
     errors.push({ field: 'location', message: locationError });
   }
 
   return errors;
+}
+
+export const MAX_PHOTO_SIZE = 1 * 1024 * 1024; // 1MB
+
+export function validatePhotoSize(file) {
+  if (!file) {
+    return { valid: false, error: 'No file selected.' };
+  }
+
+  if (file.size > MAX_PHOTO_SIZE) {
+    return {
+      valid: false,
+      error: 'The photo is too large. Please upload one under 1MB.',
+    };
+  }
+
+  return { valid: true, error: '' };
 }

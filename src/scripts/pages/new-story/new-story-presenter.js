@@ -1,20 +1,26 @@
 import * as StoryAPI from '../../data/api';
-import { sleep } from '../../utils';
+import {
+  sleep,
+  registerBackgroundSync,
+  isReallyOnline,
+  getUserName,
+} from '../../utils';
 import { SCROLL_INTENT } from '../../config';
 
 export default class NewStoryPresenter {
   #view;
   #model;
+  #dbModel;
 
-  constructor({ view, model }) {
+  constructor({ view, model, dbModel }) {
     this.#view = view;
     this.#model = model;
+    this.#dbModel = dbModel;
   }
 
   init() {
     this.showNewFormMap();
     this.#view.bindSubmit(this.handleSubmitForm);
-    this.#view.initLiveValidation();
   }
 
   async showNewFormMap() {
@@ -29,23 +35,49 @@ export default class NewStoryPresenter {
     }
   }
 
+  async keepPendingStory(payload) {
+    await this.#dbModel.savePendingStory({
+      ...payload,
+      id: crypto.randomUUID(),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      name: getUserName(),
+    });
+    await registerBackgroundSync();
+    this.#view.showSnackbar(
+      `You're offline. Your story is saved and will sync when you're back online.`,
+      'warning',
+    );
+    await sleep(2500);
+    window.__scrollIntent = SCROLL_INTENT.STORY;
+    this.#view.redirectToHome();
+  }
+
   async addNewStory(payload) {
     this.#view.updateStateButton({ loading: true });
 
     try {
-      const response = await this.#model.addNewStory(payload);
+      if (!(await isReallyOnline())) {
+        await this.keepPendingStory(payload);
+        return;
+      }
 
+      const response = await this.#model.addNewStory(payload);
       if (!response.ok) {
-        this.#view.showSnackbar(`Error! ${response.message}`, 'error');
+        if (response.status >= 500) {
+          await this.keepPendingStory(payload);
+        } else {
+          this.#view.showSnackbar(`Error! ${response.message}`, 'error');
+        }
         return;
       }
 
       this.#view.showSnackbar('Successfully Add New Story', 'success');
-
+      await sleep(2000);
       window.__scrollIntent = SCROLL_INTENT.STORY;
       this.#view.redirectToHome();
     } catch (error) {
-      console.error('addNewStory: error:', error);
+      await this.keepPendingStory(payload);
       this.#view.showSnackbar(`Error! ${error.message}`, 'error');
     } finally {
       this.#view.updateStateButton({ loading: false });

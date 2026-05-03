@@ -1,25 +1,38 @@
-import { getActiveRoute } from '../routes/url-parser';
 import { STORAGE_KEYS } from '../config';
+import { set, get, del } from 'idb-keyval';
 
-export function getAccessToken() {
+export async function getAccessToken() {
   try {
-    const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
-    const accessToken = userData?.ACCESS_TOKEN_KEY;
+    const token = await get('auth-token');
+    if (token) return token;
 
-    if (accessToken === 'null' || accessToken === 'undefined') {
-      return null;
+    if (typeof window !== 'undefined') {
+      const userData = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
+      const accessToken = userData?.ACCESS_TOKEN_KEY;
+
+      if (
+        !accessToken ||
+        accessToken === 'null' ||
+        accessToken === 'undefined'
+      ) {
+        return null;
+      }
+      return accessToken;
     }
 
-    return accessToken;
+    return null;
   } catch (error) {
     console.error('getAccessToken: error:', error);
     return null;
   }
 }
 
-export function putUserData(user) {
+export async function putUserData(user) {
   try {
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    }
+    await set('auth-token', user.ACCESS_TOKEN_KEY);
     return true;
   } catch (error) {
     console.error('putUserData: error:', error);
@@ -27,42 +40,22 @@ export function putUserData(user) {
   }
 }
 
-export function removeAccessToken() {
+export async function removeAccessToken() {
   try {
-    localStorage.removeItem(STORAGE_KEYS.USER);
+    await del('auth-token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+    }
     return true;
   } catch (error) {
-    console.error('getLogout: error:', error);
+    console.error('removeAccessToken: error:', error);
     return false;
   }
 }
 
-const unauthenticatedRoutesOnly = ['/login', '/register'];
-
-export function getLogout() {
-  removeAccessToken();
-}
-
-export function resolveFinalRoute() {
-  let currentRoute = getActiveRoute();
-  const isLoggedIn = !!getAccessToken();
-
-  if (
-    !isLoggedIn &&
-    currentRoute !== '/login' &&
-    currentRoute !== '/register'
-  ) {
-    location.hash = '/login';
-    return '/login';
+export async function getLogout() {
+  await removeAccessToken();
+  if (typeof window !== 'undefined') {
+    window.location.hash = '/login';
   }
-
-  if (
-    isLoggedIn &&
-    (currentRoute === '/login' || currentRoute === '/register')
-  ) {
-    location.hash = '/';
-    return '/';
-  }
-
-  return currentRoute;
 }

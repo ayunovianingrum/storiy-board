@@ -6,7 +6,6 @@ export function attachValidation(inputs) {
 
     target.setCustomValidity('');
 
-    // custom rules
     if (target.validity.valueMissing) {
       target.setCustomValidity(`${capitalize(target.name)} is required`);
     }

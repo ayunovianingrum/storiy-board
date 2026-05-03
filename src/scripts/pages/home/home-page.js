@@ -1,14 +1,16 @@
-import { html } from '../../utils/html';
 import * as StoryAPI from '../../data/api';
 import HomePresenter from './home-presenter';
-import { capitalize } from '../../utils';
+import Database from '../../database';
 import Map from '../../utils/map';
-import MainLayout from '../layout/layout';
-import StoryItem from '../../components/story-item';
+import { storyItem, noData, popupContent } from '../../template.js';
 
 export default class HomePage {
   #presenter;
   #map = null;
+
+  constructor() {
+    this.onStoriesSynced = this.onStoriesSynced.bind(this);
+  }
 
   async render() {
     const data = Array.from({ length: 3 });
@@ -20,26 +22,29 @@ export default class HomePage {
       </div>
     `;
 
-    return html`<section
-        class="m-auto w-full max-w-150 px-8 pt-37.5 text-center text-3xl font-medium md:text-4xl"
-      >
-        <h1 class="leading-[1.6]">
-          Where all stories are being
-          <span class="cs-tag-text-outlined">shared,</span>
-          <span class="cs-tag-text-outlined">heard,</span> and
-          <span class="cs-tag-text">connected.</span>
-        </h1>
-      </section>
-      <section class="map-wrapper">
-        <div id="map" class="transition"></div>
-        <div class="map-fog-top z-999"></div>
-        <div class="map-fog z-1000"></div>
-        <div
-          id="map-loading-container"
-          class="skeleton absolute hidden h-full w-full rounded-2xl p-6 transition"
+    return `
+      <section class="flex min-h-screen flex-col justify-end">
+        <section
+          class="m-auto w-full max-w-150 px-8 pt-37.5 text-center text-3xl font-medium md:text-4xl"
         >
-          <div class="loader loader-absolute"></div>
-        </div>
+          <h1 class="leading-[1.6]">
+            Where all stories are being
+            <span class="cs-tag-text-outlined">shared,</span>
+            <span class="cs-tag-text-outlined">heard,</span> and
+            <span class="cs-tag-text">connected.</span>
+          </h1>
+        </section>
+        <section class="map-wrapper">
+          <div id="map" class="transition"></div>
+          <div class="map-fog-top z-999"></div>
+          <div class="map-fog z-1000"></div>
+          <div
+            id="map-loading-container"
+            class="skeleton absolute hidden h-full w-full rounded-2xl p-6 transition"
+          >
+            <div class="loader loader-absolute"></div>
+          </div>
+        </section>
       </section>
       <section
         id="story-container"
@@ -60,22 +65,34 @@ export default class HomePage {
     this.#presenter = new HomePresenter({
       view: this,
       model: StoryAPI,
+      dbModel: Database,
     });
 
     this.#presenter.init();
-    const storyContainer = document.getElementById('story-container');
+    this.#setupPageAction();
+  }
 
-    storyContainer.addEventListener('click', (e) => {
-      const button = e.target.closest('app-button');
-      if (!button) return;
+  destroy() {
+    window.removeEventListener('stories:synced', this.onStoriesSynced);
+    document
+      .getElementById('story-container')
+      .removeEventListener('click', this.#onClickDetail);
 
-      const id = button.dataset.id;
-      location.hash = `#/story/${id}`;
-    });
+    document
+      .getElementById('add-story-btn')
+      .removeEventListener('click', this.#onClickAddNewStory);
+  }
 
-    document.getElementById('add-story-btn').addEventListener('click', () => {
-      location.hash = '#/new-story';
-    });
+  #setupPageAction() {
+    document
+      .getElementById('story-container')
+      .addEventListener('click', this.#onClickDetail);
+
+    document
+      .getElementById('add-story-btn')
+      .addEventListener('click', this.#onClickAddNewStory);
+
+    window.addEventListener('stories:synced', this.onStoriesSynced);
   }
 
   async initialMap() {
@@ -85,27 +102,58 @@ export default class HomePage {
     });
   }
 
-  renderStories(data) {
-    const storyItem = data.reduce((accumulator, item) => {
-      if (this.#map) {
-        const coordinate = [item.lat, item.lon];
-        const markerOptions = { alt: item.name };
-        const popupOptions = {
-          content: this.popupContent(item.name, item.description),
-        };
-        this.#map.addMarker(coordinate, markerOptions, popupOptions, true);
-      }
-
-      return accumulator.concat(StoryItem(item));
-    }, '');
-
-    const storyContainer = document.getElementById('story-container');
-    storyContainer.innerHTML = storyItem;
+  async onStoriesSynced() {
+    await this.#presenter.syncStoriesList();
   }
 
-  popupContent(name, description) {
-    return html`<p class="font-medium">${name}</p>
-      <p class="line-clamp-5">${description}</p>`;
+  #onClickAddNewStory() {
+    location.hash = '#/new-story';
+  }
+
+  #onClickDetail(e) {
+    const button = e.target.closest('app-button');
+    if (!button) return;
+
+    const id = button.dataset.id;
+    location.hash = `#/story/${id}`;
+  }
+
+  renderStories(data, error = '') {
+    const storyContainer = document.getElementById('story-container');
+
+    const renderStoryItem = () => {
+      const storyItemData = data.reduce((accumulator, item) => {
+        if (this.#map) {
+          const coordinate = [item.lat, item.lon];
+          const markerOptions = { alt: item.name };
+          const popupOptions = {
+            content: popupContent(item.name, item.description),
+          };
+          this.#map.addMarker(coordinate, markerOptions, popupOptions, true);
+        }
+
+        return accumulator.concat(storyItem(item));
+      }, '');
+
+      storyContainer.innerHTML = storyItemData;
+    };
+
+    const render = () => {
+      if (data.length === 0) {
+        storyContainer.innerHTML = noData({ desc: error });
+        return;
+      }
+      renderStoryItem();
+    };
+
+    if (!document.startViewTransition) {
+      render();
+      return;
+    }
+
+    document.startViewTransition(() => {
+      render();
+    });
   }
 
   showMapLoading() {

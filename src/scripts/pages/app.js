@@ -1,33 +1,40 @@
 import routes from '../routes/routes';
-import { parseActivePathname, getActiveRoute } from '../routes/url-parser';
-import { transitionHelper } from '../utils';
-import { resolveFinalRoute } from '../utils/auth';
-import { SCROLL_INTENT } from '../config';
 import AuthLayout from './layout/auth-layout';
 import MainLayout from './layout/layout';
+import { SCROLL_INTENT } from '../config';
+import { scrollToStoryList, transitionHelper } from '../utils';
+import { parseActivePathname, resolveFinalRoute } from '../routes/url-parser';
 
 class App {
   #content = null;
+  currentPage = null;
 
   constructor({ content }) {
     this.#content = content;
   }
 
   async renderPage() {
-    const finalRoute = resolveFinalRoute();
-
+    const finalRoute = await resolveFinalRoute();
     const routeHandler = routes[finalRoute];
+
     if (!routeHandler) {
-      console.warn(`No route handler for: ${finalRoute}`);
       return;
     }
 
-    const page = routeHandler(this);
-
-    if (!page) {
-      console.warn('Page is null even after guard resolution');
+    const newPage = routeHandler(this);
+    if (!newPage) {
       return;
     }
+
+    if (this.currentPage?.destroy) {
+      try {
+        this.currentPage.destroy();
+      } catch (err) {
+        console.error('Error while destroying previous page:', err);
+      }
+    }
+
+    this.currentPage = newPage;
 
     const { resource } = parseActivePathname();
     const isAuth = resource === 'login' || resource === 'register';
@@ -41,8 +48,8 @@ class App {
 
         const main = document.querySelector('#main-content');
         if (main) {
-          main.innerHTML = await page?.render();
-          page?.afterRender?.();
+          main.innerHTML = await newPage.render();
+          newPage.afterRender?.();
         }
 
         layoutInstance.afterRender?.();
@@ -65,18 +72,8 @@ class App {
           }
 
           if (intent === SCROLL_INTENT.STORY) {
-            const el = document.querySelector('#story-container');
-
-            if (el) {
-              const top = el.getBoundingClientRect().top + window.scrollY;
-
-              window.scrollTo({
-                top: top - 80,
-                behavior: 'smooth',
-              });
-            }
+            scrollToStoryList();
           }
-
           window.__scrollIntent = null;
         });
       });

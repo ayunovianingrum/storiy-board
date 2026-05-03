@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 STUDENT.txt
+src/dev-dist/
 
 # Editor directories and files
 .vscode/*

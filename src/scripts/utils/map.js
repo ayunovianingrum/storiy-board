@@ -141,6 +141,10 @@ export default class Map {
     this.#map.addEventListener(eventName, callback);
   }
 
+  removeMapEventListener(eventName, callback) {
+    this.#map.removeEventListener(eventName, callback);
+  }
+
   changeCamera(coordinate, zoomLevel = null) {
     if (!zoomLevel) {
       this.#map.setView(coordinate, this.#zoom);
@@ -169,7 +173,7 @@ export default class Map {
 
   createActiveIcon() {
     return L.icon({
-      iconUrl: '/images/marker-icon-red.png',
+      iconUrl: '/images/icons/marker-icon-red.png',
       shadowUrl: markerShadow,
       iconSize: [25, 41],
       iconAnchor: [12, 41],
