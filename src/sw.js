@@ -115,20 +115,40 @@ self.addEventListener('sync', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  async function chainPromise() {
-    const data = await event.data.json();
-    await self.registration.showNotification(data.title, {
-      body: data.options.body,
+  async function handlePush() {
+    let data = { title: 'New Story', options: { body: '' } };
+
+    if (!event.data) {
+      return self.registration.showNotification(data.title, data.options);
+    }
+
+    try {
+      data = event.data.json();
+    } catch {
+      const text = await event.data.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data.options.body = text;
+      }
+    }
+
+    const title = data.title || 'New Story';
+    const options = {
+      body: data.options?.body || '',
       icon: '/images/icons/icon-x192.png',
       badge: '/images/icons/icon-white-x72.png',
       actions: [
         { action: 'view', title: '👁️ Read Story' },
         { action: 'close', title: '✖️ Close' },
       ],
-    });
+      ...data.options,
+    };
+
+    return self.registration.showNotification(title, options);
   }
 
-  event.waitUntil(chainPromise());
+  event.waitUntil(handlePush());
 });
 
 self.addEventListener('notificationclick', (event) => {

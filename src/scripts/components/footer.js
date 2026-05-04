@@ -11,14 +11,14 @@ class FooterArea extends HTMLElement {
       >
         <div class="m-auto flex max-w-270 flex-col items-start justify-center gap-6 md:flex-row">
           <div class="max-w-100">
-            <h3 class="text-lg font-medium">Location</h3>
+            <h2 class="text-lg font-medium">Location</h2>
             <p class="text-primary-60/70 mt-1 text-sm">
               Dicoding Space Jl. Batik Kumeli No. 50, Sukaluyu, Kec. Cibeunying
               Kaler, Kota Bandung Jawa Barat 40123
             </p>
           </div>
           <div class="w-100">
-            <h3 class="text-lg font-medium">Company</h3>
+            <h2 class="text-lg font-medium">Company</h2>
             <ul class="text-primary-60/70 grid md:grid-cols-2">
               <li>
                 <a
