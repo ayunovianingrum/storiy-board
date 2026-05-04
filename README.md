@@ -53,6 +53,8 @@ Create a `.env` file in the root directory:
 
 ```env
 VITE_MAP_SERVICE_API_KEY=your_api_key_here
+VITE_VAPID_PUBLIC_KEY=vapid_public_key_here
+VITE_API_BASE_URL=base_url_here
 ```
 
 > ⚠️ Make sure the variable starts with `VITE_` so it can be accessed in the frontend.
