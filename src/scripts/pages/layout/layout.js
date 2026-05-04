@@ -54,8 +54,9 @@ export default class MainLayout {
 
   async #handleClick(e) {
     const button = e.target.closest('#subscribe-button');
-    const task = button.dataset.task;
+    const task = button?.dataset?.task;
 
+    if (!task) return;
     if (this.isProcessing) return;
 
     let endpoint = null;
