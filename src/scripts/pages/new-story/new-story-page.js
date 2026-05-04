@@ -489,9 +489,14 @@ export default class NewStoryPage {
     return true;
   }
 
-  #redirectToHome() {
+  #redirectToHome(status) {
     this.#clearForm();
-    history.back();
+
+    if (status === 'not-back') {
+      location.hash = '#/';
+    } else {
+      history.back();
+    }
   }
 
   #clearForm() {

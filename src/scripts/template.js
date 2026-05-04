@@ -344,7 +344,7 @@ export function navbarDropdown(name) {
         <ul>
           <li>
             <a
-              href="/#/"
+              href="#/"
               class="bg-grey-50/15 hover:text-primary-50 mb-2 block w-full cursor-pointer rounded-lg px-4 py-2 transition hover:bg-white/20"
               data-nav="home"
             >
@@ -356,7 +356,7 @@ export function navbarDropdown(name) {
             <a
               class="bg-grey-50/15 hover:text-primary-50 block w-full cursor-pointer rounded-lg px-4 py-2 transition hover:bg-white/20"
               data-nav="saved-stories"
-              href="/#/saved-stories"
+              href="#/saved-stories"
             >
               <i class="fas fa-bookmark mr-2"></i>
               Saved Stories</a

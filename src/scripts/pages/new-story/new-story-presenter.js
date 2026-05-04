@@ -50,7 +50,7 @@ export default class NewStoryPresenter {
     );
     await sleep(2500);
     window.__scrollIntent = SCROLL_INTENT.STORY;
-    this.#view.redirectToHome();
+    this.#view.redirectToHome('not-back');
   }
 
   async addNewStory(payload) {
@@ -75,7 +75,7 @@ export default class NewStoryPresenter {
       this.#view.showSnackbar('Successfully Add New Story', 'success');
       await sleep(2000);
       window.__scrollIntent = SCROLL_INTENT.STORY;
-      this.#view.redirectToHome();
+      this.#view.redirectToHome('not-back');
     } catch (error) {
       await this.keepPendingStory(payload);
       this.#view.showSnackbar(`Error! ${error.message}`, 'error');

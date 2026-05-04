@@ -42,12 +42,22 @@ export async function requestNotificationPermission(snackbar) {
 }
 
 export async function getPushSubscription() {
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('SW ready timeout')), 3000),
+    ),
+  ]);
   return await registration.pushManager.getSubscription();
 }
 
 export async function isCurrentPushSubscriptionAvailable() {
-  return !!(await getPushSubscription());
+  try {
+    return !!(await getPushSubscription());
+  } catch (error) {
+    console.error('isCurrentPushSubscriptionAvailable:', error);
+    return false;
+  }
 }
 
 export function generateSubscribeOptions() {

@@ -29,7 +29,11 @@ export async function initSyncManager(registration) {
   });
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      if (event.data?.type === 'DO_SYNC_STORIES') {
+        await trySync();
+      }
+
       if (event.data?.type === 'STORIES_SYNCED') {
         window.dispatchEvent(new CustomEvent('stories:synced'));
       }

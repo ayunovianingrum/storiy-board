@@ -16,14 +16,19 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+
   plugins: [
     tailwindcss(),
     VitePWA({
+      registerType: 'autoUpdate',
       strategies: 'injectManifest',
       srcDir: '.',
       filename: 'sw.js',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        additionalManifestEntries: [
+          { url: '/images/login-bg.jpg', revision: null },
+        ],
       },
       devOptions: {
         enabled: true,

@@ -8,12 +8,10 @@ import {
   StaleWhileRevalidate,
 } from 'workbox-strategies';
 import { BASE_URL } from './scripts/config';
-import { syncPendingStories } from './scripts/data/api';
 
-const precacheImages = [{ url: '/images/login-bg.png', revision: 'v1' }];
 const manifest = self.__WB_MANIFEST;
 
-precacheAndRoute([...manifest, ...precacheImages]);
+precacheAndRoute(manifest);
 
 registerRoute(
   ({ url }) => {
@@ -30,7 +28,7 @@ registerRoute(
       }),
       new ExpirationPlugin({
         maxEntries: 30,
-        maxAgeSeconds: 60 * 24 * 60 * 60, // 60 days
+        maxAgeSeconds: 60 * 24 * 60 * 60,
       }),
     ],
   }),
@@ -51,7 +49,7 @@ registerRoute(
       }),
       new ExpirationPlugin({
         maxEntries: 30,
-        maxAgeSeconds: 60 * 24 * 60 * 60, // 60 days
+        maxAgeSeconds: 60 * 24 * 60 * 60,
       }),
     ],
   }),
@@ -96,23 +94,22 @@ registerRoute(
 );
 
 registerRoute(
-  ({ url }) => url.origin.includes('maptiler'),
+  ({ url }) => {
+    return url.origin.includes('maptiler');
+  },
   new CacheFirst({
     cacheName: 'maptiler-api',
-    plugins: [
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
-    ],
   }),
 );
 
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-stories') {
     event.waitUntil(
-      syncPendingStories()
-        .then(() => console.log('Background Sync successful!'))
-        .catch((err) => console.error('Background Sync failed:', err)),
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        clients.forEach((client) =>
+          client.postMessage({ type: 'DO_SYNC_STORIES' }),
+        );
+      }),
     );
   }
 });
@@ -147,33 +144,43 @@ self.addEventListener('notificationclick', (event) => {
         for (const client of clientList) {
           if (!client.url.includes(self.location.origin)) continue;
 
-          client.focus();
+          return client.focus().then(() => {
+            try {
+              const url = new URL(client.url);
+              const currentHash = (url.hash || '').replace('#', '') || '/';
+              const isHome = currentHash === '/' || currentHash === '';
 
-          try {
-            const url = new URL(client.url);
-            const currentHash = (url.hash || '').replace('#', '') || '/';
-            const isHome = currentHash === '/' || currentHash === '';
-
-            if (!isHome) {
-              return client
-                .navigate(targetUrl)
-                .then(() => {
-                  return new Promise((r) => setTimeout(r, 150));
-                })
-                .then(() => {
+              if (!isHome) {
+                return client
+                  .navigate(targetUrl)
+                  .then(
+                    (navigatedClient) =>
+                      new Promise((r) =>
+                        setTimeout(() => r(navigatedClient), 500),
+                      ),
+                  )
+                  .then((navigatedClient) => {
+                    const target = navigatedClient || client;
+                    target.postMessage({
+                      type: 'SCROLL_INTENT',
+                      intent: 'STORY',
+                    });
+                  });
+              } else {
+                return new Promise((r) => setTimeout(r, 500)).then(() => {
                   client.postMessage({
                     type: 'SCROLL_INTENT',
                     intent: 'STORY',
                   });
                 });
-            } else {
-              client.postMessage({ type: 'SCROLL_INTENT', intent: 'STORY' });
+              }
+            } catch (e) {
+              console.error('[SW] URL parse error', e);
+              return new Promise((r) => setTimeout(r, 150)).then(() => {
+                client.postMessage({ type: 'SCROLL_INTENT', intent: 'STORY' });
+              });
             }
-          } catch (e) {
-            console.error('[SW] URL parse error', e);
-            client.postMessage({ type: 'SCROLL_INTENT', intent: 'STORY' });
-          }
-          return;
+          });
         }
 
         if (clients.openWindow) {

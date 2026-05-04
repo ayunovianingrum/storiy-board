@@ -32,7 +32,7 @@ export default class AuthPage {
           >
             <header class="flex gap-2 md:order-1 md:flex-col">
               <img
-                src="/images/icons/logo.png"
+                src="images/icons/logo.png"
                 class="w-7 md:w-12"
                 alt="Storiy Logo"
               />
