@@ -177,7 +177,7 @@ export function storyItem(item) {
       </div>
       <div class="z-20 flex flex-1 flex-col justify-between">
         <div class="pb-5">
-          <h2 class="truncate text-xl font-medium text-white">${name}</h2>
+          <h3 class="truncate text-xl font-medium text-white">${name}</h2>
           <p class="text-grey-50 my-1 text-xs font-light">
             <i class="fas fa-md fa-calendar mr-1"></i>
             ${showFormattedDate(createdAt, 'id-ID')}

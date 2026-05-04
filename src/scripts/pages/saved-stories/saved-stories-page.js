@@ -40,6 +40,7 @@ export default class SavedStoriesPage {
         </div>
       </section>
       <div class="relative m-auto max-w-[80%] md:max-w-md">
+        <label for="search-saved-stories" class="cs-label sr-only">Search saved stories</label>        
         <input
           placeholder="Search by name, place, or desc of story.."
           type="search"

@@ -46,6 +46,7 @@ export default class HomePage {
           </div>
         </section>
       </section>
+      <h2 class="sr-only">Stories</h2>
       <section
         id="story-container"
         class="mx-auto grid max-w-300 grid-cols-[repeat(auto-fit,minmax(250px,250px))] justify-center gap-6 pt-14 pb-7"
